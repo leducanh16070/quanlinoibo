@@ -1,0 +1,6 @@
+{
+  "name": "Elysium Ledger - Private Wealth Governance",
+  "description": "High-end wealth management and asset governance platform for Family Offices and Private Banks. Features portfolio tracking, multi-tier ownership analysis, and compliance auditing.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["Asset Management", "Financial Auditing", "Ownership Visualization"]
+}
