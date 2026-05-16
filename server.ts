@@ -1,6 +1,7 @@
 import express from "express";
 import path from "path";
 import { createServer as createViteServer } from "vite";
+import { WebSocketServer, WebSocket } from "ws";
 
 async function startServer() {
   const app = express();
@@ -74,7 +75,32 @@ async function startServer() {
       risk: "Low", 
       status: "ACTIVE", 
       version: 1,
-      allocation: "Real Estate"
+      allocation: "Real Estate",
+      valuationHistory: [
+        { date: '15/03/2024', value: 125000000, change: 4.2, appraiser: 'Savills Vietnam', status: 'COMPLETED' },
+        { date: '10/09/2023', value: 120000000, change: 1.8, appraiser: 'Internal Team', status: 'COMPLETED' },
+        { date: '15/03/2023', value: 118000000, change: 0.0, appraiser: 'Knight Frank', status: 'COMPLETED' },
+        { date: '20/08/2022', value: 105000000, change: 15.5, appraiser: 'Savills Vietnam', status: 'COMPLETED' }
+      ],
+      valuationSummary: {
+        growth5Y: 45.8,
+        estimatedProfit: 7.7, // in billion
+        lastYearGrowth: 12.4
+      },
+      fluctuationReasons: [
+        { date: 'THÁNG 03, 2024', title: 'Thị trường hồi phục', description: 'Nhu cầu bất động sản cao cấp khu vực Đông TP.HCM tăng 15% sau khi các chính sách tín dụng được nới lỏng.' },
+        { date: 'THÁNG 08, 2022', title: 'Hạ tầng giao thông', description: 'Khởi công tuyến đường vành đai và cầu nối trực tiếp vào trung tâm tài chính, tạo đà tăng giá mạnh.' },
+        { date: 'THÁNG 12, 2019', title: 'Nâng cấp tài sản', description: 'Hoàn thiện gói nội thất cao cấp và cảnh quan sân vườn theo tiêu chuẩn quốc tế.' }
+      ],
+      valuationChart: [
+        { year: '2018', value: 85 },
+        { year: '2019', value: 92 },
+        { year: '2020', value: 105 },
+        { year: '2021', value: 102 },
+        { year: '2022', value: 108 },
+        { year: '2023', value: 118 },
+        { year: '2024', value: 125 }
+      ]
     },
     { 
       id: "ast-002", 
@@ -126,6 +152,12 @@ async function startServer() {
   ];
 
   const salaryAdjustments: any[] = [];
+
+  const chatMessages: any[] = [
+    { id: 'm1', sender: 'tm-001', text: 'Chào mọi người, bản báo cáo rủi ro Q4 cho Grand Horizon đã được cập nhật.', timestamp: new Date(Date.now() - 7200000).toISOString() },
+    { id: 'm2', sender: 'tm-003', text: 'Đã nhận, phần thanh khoản đang được rà soát kỹ.', timestamp: new Date(Date.now() - 3600000).toISOString() },
+    { id: 'm3', sender: 'tm-002', text: 'Tôi vừa cập nhật dữ liệu từ Savills cho The Grand Marina.', timestamp: new Date(Date.now() - 1800000).toISOString() }
+  ];
 
   const departments = [
     { id: "dept-001", name: "Asset Management", headId: "tm-001" },
@@ -253,6 +285,304 @@ async function startServer() {
     { id: "ld-002", ownerId: "per-001", name: "Căn cước công dân (001298412XXX)", category: "Định danh", expiry: "15/09/2023", status: "Sắp hết hạn" },
     { id: "ld-003", ownerId: "per-001", name: "Giấy phép thành lập Alpha Strategic", category: "Pháp lý DN", expiry: "12/10/2030", status: "Đang xử lý" },
     { id: "ld-004", ownerId: "per-001", name: "Xác nhận cư trú (Tạm trú dài hạn)", category: "Địa chỉ", expiry: "28/12/2024", status: "Đã xác minh" },
+  ];
+
+  const vaultFolders = [
+    { id: 'f-1', name: 'Bất động sản Châu Âu', count: 24, size: '1.2 GB', category: 'RE' },
+    { id: 'f-2', name: 'Hợp đồng Ủy thác Gold', count: 8, size: '45 MB', category: 'CONTRACT' },
+    { id: 'f-3', name: 'Hồ sơ Pháp lý 2024', count: 156, size: '4.8 GB', category: 'LEGAL' },
+  ];
+
+  const vaultFiles = [
+    { id: 'doc-1', name: 'SPA_Geneva_Penthouse_Final.pdf', type: 'PDF', uploadedBy: 'Cố vấn Marcus', uploadedAt: '14:20 yesterday', tags: ['Hợp đồng', 'Bất động sản'] },
+    { id: 'doc-2', name: 'Artwork_Valuation_Certificate.jpg', type: 'IMG', uploadedBy: 'Admin', uploadedAt: '2 hours ago', tags: ['Chờ xử lý', 'Tài sản nghệ thuật'] },
+    { id: 'doc-3', name: 'Trust_Deed_Amendment_V2.docx', type: 'DOC', uploadedBy: 'Phòng Pháp chế', uploadedAt: '3 hours ago', tags: ['Ủy thác'] },
+  ];
+
+  const auditStatus = [
+    { id: 'as-1', name: 'Xác minh danh tính KYC', status: 'COMPLETED', period: '2024', color: 'emerald' },
+    { id: 'as-2', name: 'Kiểm toán Thuế nội bộ', status: 'CLEAN', period: 'Q3 2023', color: 'emerald' },
+    { id: 'as-3', name: 'Cập nhật Điều khoản Ủy thác', status: 'PROCESSING', period: 'Current', color: 'amber' },
+    { id: 'as-4', name: 'Báo cáo ESG Portfolio', status: 'PLANNED', period: 'Q1 2025', color: 'gray' },
+  ];
+
+  const reportData = {
+    metrics: {
+      roi: 14.8,
+      roiChange: 2.1,
+      netProfit: 2450000000,
+      netProfitChange: 120000000,
+      riskLevel: "Trung bình",
+      growthForecast: 5.2,
+    },
+    cashFlowTrend: [
+      { month: 'T1', inflow: 1.2, outflow: 0.8, forecast: false },
+      { month: 'T2', inflow: 1.5, outflow: 1.0, forecast: false },
+      { month: 'T3', inflow: 1.8, outflow: 1.2, forecast: false },
+      { month: 'T4', inflow: 1.7, outflow: 1.4, forecast: false },
+      { month: 'T5', inflow: 2.1, outflow: 1.1, forecast: false },
+      { month: 'T6', inflow: 1.9, outflow: 1.3, forecast: false },
+      { month: 'T7', inflow: 1.6, outflow: 1.2, forecast: false },
+      { month: 'T8', inflow: 1.8, outflow: 1.5, forecast: false },
+      { month: 'T9', inflow: 2.0, outflow: 1.6, forecast: false },
+      { month: 'T10', inflow: 2.2, outflow: 1.7, forecast: true },
+      { month: 'T11', inflow: 2.3, outflow: 1.8, forecast: true },
+      { month: 'T12', inflow: 2.5, outflow: 1.9, forecast: true },
+    ],
+    assetAllocation: [
+      { name: 'Bất động sản', value: 45.0, color: '#000000' },
+      { name: 'Chứng khoán', value: 30.0, color: '#6366f1' },
+      { name: 'Trái phiếu', value: 15.0, color: '#94a3b8' },
+      { name: 'Khác', value: 10.0, color: '#e2e8f0' },
+    ],
+    clientReports: [
+      { 
+        id: 'cl-1', 
+        name: 'Tập đoàn Alpha Prime', 
+        code: 'AP-2024-01', 
+        investment: 12500000000, 
+        currentValue: 14125000000, 
+        pnlVnd: 1625000000, 
+        pnlPercent: 13.0, 
+        status: 'growing' 
+      },
+      { 
+        id: 'cl-2', 
+        name: 'Lê Hoàng Nam', 
+        code: 'LHN-9912', 
+        investment: 4200000000, 
+        currentValue: 4010000000, 
+        pnlVnd: -190000000, 
+        pnlPercent: -4.5, 
+        status: 'underReview' 
+      },
+      { 
+        id: 'cl-3', 
+        name: 'Quỹ đầu tư Việt Thắng', 
+        code: 'VTF-0042', 
+        investment: 25000000000, 
+        currentValue: 26850000000, 
+        pnlVnd: 1850000000, 
+        pnlPercent: 7.4, 
+        status: 'onTrack' 
+      },
+      { 
+        id: 'cl-4', 
+        name: 'Nguyễn Thị Minh', 
+        code: 'NTM-8821', 
+        investment: 850000000, 
+        currentValue: 920000000, 
+        pnlVnd: 70000000, 
+        pnlPercent: 8.2, 
+        status: 'growing' 
+      },
+      { 
+        id: 'cl-5', 
+        name: 'Bất động sản Thành Công', 
+        code: 'TC-RE-01', 
+        investment: 50000000000, 
+        currentValue: 48500000000, 
+        pnlVnd: -1500000000, 
+        pnlPercent: -3.0, 
+        status: 'underReview' 
+      }
+    ]
+  };
+
+  const riskAnalysisData = [
+    {
+      id: 'ent-001',
+      name: 'Grand Horizon Capital',
+      type: 'Quỹ đầu tư tư nhân',
+      marketScore: 65,
+      liquidityScore: 42,
+      legalScore: 20,
+      operationalScore: 35,
+      totalRiskScore: 42, 
+      index: 'MEDIUM',
+      matrix: { impact: 4, probability: 4 },
+      trends: [
+        { month: 'TH10 23', score: 45 },
+        { month: 'TH11 23', score: 48 },
+        { month: 'TH12 23', score: 42 },
+        { month: 'TH01 24', score: 46 },
+        { month: 'TH02 24', score: 58 },
+        { month: 'HIỆN TẠI', score: 42 }
+      ],
+      subFactors: {
+        market: [
+          { name: 'Biến động giá tài sản', score: 65, trend: 'up' },
+          { name: 'Thanh khoản thị trường', score: 28, trend: 'stable' }
+        ],
+        liquidity: [
+          { name: 'Khả năng thanh toán nhanh', score: 65, trend: 'down' },
+          { name: 'Dòng tiền hoạt động', score: 79, trend: 'stable' }
+        ],
+        legal: [
+          { name: 'Tuân thủ (Compliance)', status: 'AN TOÀN', score: 20 },
+          { name: 'Giấy phép', status: 'ĐANG XÉT DUYỆT', score: 60 }
+        ],
+        operational: [
+          { name: 'Quy trình nội bộ', score: 12, trend: 'stable' },
+          { name: 'Nhân sự chủ chốt', score: 54, trend: 'up' }
+        ]
+      },
+      alerts: [
+        { level: 'XỬ LÝ NGAY', message: 'Biến động tỷ giá vượt ngưỡng 1.5%', time: 'HÔM NAY', detail: 'Danh mục Crypto-Assets đang chịu áp lực thanh khoản lớn.' },
+        { level: 'CHI TIẾT', message: 'Cập nhật quy định mới từ SEC (Rule 2a-7)', time: '12 GIỜ TRƯỚC', detail: 'Yêu cầu báo cáo tuân thủ bổ sung cho quỹ Grand Horizon.' },
+        { level: 'CHI TIẾT', message: 'Thay đổi nhân sự cấp cao (CFO)', time: 'HÔM QUA', detail: 'Hợp đồng pháp lý cần được ký lại cho các tài khoản đối tác.' }
+      ],
+      mitigationProgress: 68,
+      mitigationActionsCount: "12/18",
+      riskStatusSummary: [
+        { label: 'Thanh khoản', value: 'Nghiêm trọng', color: 'rose' },
+        { label: 'Thị trường', value: 'Trung bình', color: 'amber' },
+        { label: 'Vận hành', value: 'Thấp', color: 'emerald' }
+      ],
+      priorityRisks: [
+        {
+          id: 'pr-01',
+          type: 'Rủi ro ngoại hối',
+          title: 'Biến động tỷ giá USD/VND',
+          exposure: 'Phơi nhiễm dự kiến: $2.4M',
+          actions: [
+            { name: 'Thiết lập Forward Contract', owner: 'Lê Minh Anh', deadline: '15/11/2024', status: 'COMPLETED' },
+            { name: 'Tái cấu trúc nợ vay ngoại tệ', owner: 'Trần Quốc Nam', deadline: '30/11/2024', status: 'PROCESSING' }
+          ]
+        },
+        {
+          id: 'pr-02',
+          type: 'Rủi ro tài chính',
+          title: 'Thiếu hụt thanh khoản ngắn hạn',
+          exposure: 'Khoảng cách dòng tiền: -15.5B VND',
+          actions: [
+            { name: 'Mở rộng hạn mức tín dụng dự phòng', owner: 'Phạm Gia Bảo', deadline: '01/11/2024', status: 'DELAYED' },
+            { name: 'Thanh lý tài sản phi cốt lõi', owner: 'Nguyễn Thùy Chi', deadline: '20/12/2024', status: 'PROCESSING' }
+          ]
+        }
+      ],
+      discussion: [
+        { user: 'Lê Minh Anh', avatar: 'MA', time: '10:45 AM, Hôm nay', message: 'Hợp đồng Forward với Vietcombank đã hoàn tất ký kết. Tỷ giá chốt tại 25,450. Đang chờ xác nhận từ phía kho bạc.' },
+        { user: 'Phạm Gia Bảo', avatar: 'PG', time: '09:12 AM, Hôm nay', message: 'Cần đẩy nhanh tiến độ hạn mức tín dụng. Bên ngân hàng yêu cầu thêm báo cáo tài chính kiểm toán 6 tháng đầu năm.' }
+      ],
+      changeLog: [
+        { time: 'Hôm nay, 14:00', message: 'Hệ thống tự động cập nhật mức độ rủi ro thanh khoản lên Nghiêm trọng.', level: 'critical' },
+        { time: 'Hôm qua, 16:30', message: 'Lê Minh Anh đã thay đổi trạng thái hành động "Forward Contract" sang Hoàn thành.', level: 'success' },
+        { time: '22 TH10, 2024', message: 'Hồ sơ quản trị viên đã khởi tạo bản kế hoạch khắc phục rủi ro Q4.', level: 'info' }
+      ],
+      effectiveness: {
+        score: 85,
+        beforeScore: 7.4,
+        afterScore: 2.1,
+        reductionDelta: -71.6,
+        summary: "Chiến dịch khắc phục đã giải quyết thành công các lỗ hổng thanh khoản chính và tái cấu trúc các nghĩa vụ nợ ngắn hạn.",
+        matrixBefore: [
+          { impact: 5, probability: 4 },
+          { impact: 4, probability: 3 }
+        ],
+        matrixAfter: [
+          { impact: 2, probability: 1 },
+          { impact: 1, probability: 2 }
+        ],
+        timeline: [
+          { date: '05/01/2024', title: 'Thiết lập Hợp đồng Kỳ hạn (Forward Contract)', description: 'Bảo hiểm rủi ro tỷ giá ngoại tệ cho các khoản đầu tư tại thị trường EU. Giảm thiểu biến động dòng tiền dự kiến 15%.', status: 'HOÀN TẤT' },
+          { date: '12/02/2024', title: 'Tái cấu trúc nghĩa vụ nợ ngắn hạn', description: 'Chuyển đổi 250 triệu USD nợ vay ngắn hạn sang trái phiếu dài hạn kỳ hạn 5 năm. Cải thiện chỉ số thanh toán hiện hành từ 0.8 lên 1.4.', status: 'HOÀN TẤT' },
+          { date: '20/04/2024', title: 'Thanh lý tài sản phi cốt lõi', description: 'Thoái vốn thành công tại các dự án bất động sản nghỉ dưỡng không thuộc danh mục ưu tiên, thu hồi 120 triệu USD tiền mặt.', status: 'HOÀN TẤT' }
+        ],
+        residualRisks: [
+          { title: 'Rủi ro chính trị địa phương', description: 'Khả năng thay đổi chính sách thuế tại khu vực Đông Nam Á vẫn chưa thể kiểm soát hoàn toàn.' },
+          { title: 'Biến động giá nguyên liệu thô', description: 'Dự báo giá thép thế giới vẫn trong biên độ dao động cao (+/- 12%).' }
+        ],
+        lessons: [
+          'Thiết lập hệ thống cảnh báo sớm (EWS) tự động.',
+          'Đa dạng hóa danh mục đầu tư vào các tài sản phi tương quan.',
+          'Tổ chức đánh giá rủi ro định kỳ mỗi quý một lần.',
+          'Xây dựng quỹ dự phòng thanh khoản tối thiểu 10%.'
+        ]
+      },
+      mitigationPlan: [
+        { action: 'Thiết lập Forward Contract ngoại tệ', responsible: 'Lê Minh Anh', timeline: '15/11/2024', status: 'COMPLETED' },
+        { action: 'Tái cấu trúc nợ vay ngắn hạn', responsible: 'Trần Quốc Nam', timeline: '30/11/2024', status: 'PROCESSING' },
+        { action: 'Mở rộng hạn mức tín dụng dự phòng', responsible: 'Phạm Gia Bảo', timeline: '01/12/2024', status: 'PLANNED' }
+      ]
+    },
+    {
+      id: 'ent-002',
+      name: 'Lâm Phan Quốc Anh',
+      type: 'Individual HNW',
+      marketScore: 45,
+      liquidityScore: 35,
+      legalScore: 12,
+      operationalScore: 10,
+      totalRiskScore: 25,
+      index: 'LOW',
+      subFactors: {
+        market: [{ name: 'Biến động danh mục cá nhân', score: 45, trend: 'stable' }],
+        liquidity: [{ name: 'Số dư tiền mặt khả dụng', score: 35, trend: 'up' }],
+        legal: [{ name: 'Rủi ro thuế cá nhân', score: 12, trend: 'stable' }],
+        operational: [{ name: 'Rủi ro ủy quyền giao dịch', score: 10, trend: 'down' }]
+      },
+      alerts: [],
+      mitigationPlan: [
+        { action: 'Xác minh nguồn gốc tài sản (KYC Level 3)', responsible: 'Marcus', timeline: '20/11/2024', status: 'COMPLETED' }
+      ]
+    },
+    {
+      id: 'ent-003',
+      name: 'Starlight Tech Ventures',
+      type: 'Venture Capital',
+      marketScore: 92,
+      liquidityScore: 88,
+      legalScore: 45,
+      operationalScore: 75,
+      totalRiskScore: 75,
+      index: 'CRITICAL',
+      subFactors: {
+        market: [
+          { name: 'Định giá Series C lỗi thời', score: 95, trend: 'up' },
+          { name: 'Rủi ro bong bóng AI', score: 89, trend: 'up' }
+        ],
+        liquidity: [
+          { name: 'Kỳ hạn thoái vốn (Exit Horizon)', score: 98, trend: 'up' },
+          { name: 'Burn rate hàng tháng', score: 78, trend: 'stable' }
+        ],
+        legal: [
+          { name: 'Quyền sở hữu trí tuệ', score: 45, trend: 'stable' }
+        ],
+        operational: [
+          { name: 'Năng lực đội ngũ Founder', score: 75, trend: 'down' }
+        ]
+      },
+      alerts: [
+        { level: 'CRITICAL', message: 'Tốc độ đốt tiền vượt dự báo 25% trong Q2', category: 'Operational' },
+        { level: 'CRITICAL', message: 'Rủi ro thanh khoản nghiêm trọng do hoãn IPO', category: 'Liquidity' }
+      ],
+      mitigationPlan: [
+        { action: 'Thoái vốn một phần tại startup giai đoạn cuối', responsible: 'Nguyễn Hoàng Nam', timeline: '10/12/2024', status: 'PLANNED' },
+        { action: 'Rà soát hợp đồng cổ đông (SHA)', responsible: 'Elena Vĩnh Cửu', timeline: '25/11/2024', status: 'PROCESSING' }
+      ]
+    },
+    {
+      id: 'ent-004',
+      name: 'Sterling Family Trust',
+      type: 'Trust',
+      marketScore: 30,
+      liquidityScore: 25,
+      legalScore: 15,
+      operationalScore: 20,
+      totalRiskScore: 22,
+      index: 'LOW',
+      subFactors: {
+        market: [{ name: 'Lợi suất trái phiếu chính phủ', score: 30, trend: 'stable' }],
+        liquidity: [{ name: 'Phân bổ tài sản tiền mặt', score: 25, trend: 'stable' }],
+        legal: [{ name: 'Tuân thủ luật tín thác BVI', score: 15, trend: 'stable' }],
+        operational: [{ name: 'Quy trình kế thừa', score: 20, trend: 'down' }]
+      },
+      alerts: [],
+      mitigationPlan: [
+        { action: 'Báo cáo độc lập từ kiểm toán BVI', responsible: 'Ban Kiểm soát', timeline: '05/12/2024', status: 'PLANNED' }
+      ]
+    }
   ];
 
   // --- CORE SERVICES ---
@@ -488,6 +818,13 @@ async function startServer() {
     }
   });
 
+  // Assets: Get asset valuation details
+  app.get("/api/assets/:id/valuation-details", (req, res) => {
+    const asset = assets.find(a => a.id === req.params.id);
+    if (!asset) return res.status(404).json({ error: "Asset not found" });
+    res.json(asset);
+  });
+
   // Organization Module: Get Structure
   app.get("/api/hr/org-chart", authorize("hr:read"), (req, res) => {
     const chart = departments.map(d => ({
@@ -621,6 +958,37 @@ async function startServer() {
   // Audit Module - Fetch logs for Frontend Vault
   app.get("/api/admin/audit", authorize("audit:read"), (req, res) => {
     res.json(auditLogs);
+  });
+
+  app.get("/api/vault/overview", (req, res) => {
+    res.json({
+      folders: vaultFolders,
+      recentFiles: vaultFiles,
+      status: auditStatus
+    });
+  });
+
+  app.post("/api/vault/upload", (req, res) => {
+    const { name, type } = req.body;
+    const newFile = {
+      id: `doc-${Math.random().toString(36).substr(2, 5)}`,
+      name: name || 'Untitled Document',
+      type: type || 'PDF',
+      uploadedBy: 'CurrentUser',
+      uploadedAt: 'Just now',
+      tags: ['New Upload']
+    };
+    vaultFiles.unshift(newFile);
+    AuditService.log('user-001', 'DOCUMENT_UPLOAD', 'Vault', `Uploaded ${newFile.name}`, false);
+    res.json(newFile);
+  });
+
+  app.get("/api/reports/comprehensive", (req, res) => {
+    res.json(reportData);
+  });
+
+  app.get("/api/risk/analysis", (req, res) => {
+    res.json(riskAnalysisData);
   });
 
   // Governance: Get all entities
@@ -947,6 +1315,41 @@ async function startServer() {
 
   const server = app.listen(PORT, "0.0.0.0", () => {
     Logger.info(`Elysium Ledger Server running on http://localhost:${PORT}`);
+  });
+
+  // --- WEBSOCKET CHAT SERVER ---
+  const wss = new WebSocketServer({ server });
+
+  wss.on('connection', (ws: WebSocket) => {
+    Logger.info('New internal chat connection');
+    
+    // Send initial history
+    ws.send(JSON.stringify({ type: 'history', data: chatMessages }));
+
+    ws.on('message', (data: string) => {
+      try {
+        const payload = JSON.parse(data);
+        if (payload.type === 'chat') {
+          const newMsg = {
+            id: `msg-${Math.random().toString(36).substr(2, 9)}`,
+            sender: payload.senderId,
+            text: payload.text,
+            timestamp: new Date().toISOString()
+          };
+          chatMessages.push(newMsg);
+          
+          // Broadcast to all clients
+          const broadcastPayload = JSON.stringify({ type: 'chat', data: newMsg });
+          wss.clients.forEach(client => {
+            if (client.readyState === WebSocket.OPEN) {
+              client.send(broadcastPayload);
+            }
+          });
+        }
+      } catch (err) {
+        Logger.error('WS Message Error', err);
+      }
+    });
   });
 
   // --- GRACEFUL SHUTDOWN ---
