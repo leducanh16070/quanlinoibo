@@ -979,7 +979,7 @@ function VaultView() {
 
       <footer className="pt-20 border-t border-gray-100 flex justify-between items-center text-gray-400">
          <div className="flex items-center space-x-4">
-           <span className="text-[10px] font-bold uppercase tracking-widest text-black">Aethelgard</span>
+           <span className="text-[10px] font-bold uppercase tracking-widest text-black">Elysium Ledger</span>
            <span className="w-px h-3 bg-gray-200"></span>
            <span className="text-[9px] font-medium uppercase tracking-tighter">{language === 'vi' ? 'Hệ thống Lưu trữ Tài liệu Bảo mật' : 'Confidential Document Vault'}</span>
          </div>
@@ -2614,11 +2614,11 @@ function PartnerNetworkView() {
 
       <footer className="pt-20 pb-10 border-t border-gray-100 flex justify-between items-center text-gray-400">
          <div className="flex items-center space-x-4">
-           <span className="text-[10px] font-bold uppercase tracking-widest text-black">Aethelgard</span>
+           <span className="text-[10px] font-bold uppercase tracking-widest text-black">Elysium Ledger</span>
            <span className="w-px h-3 bg-gray-200"></span>
            <span className="text-[9px] font-medium uppercase tracking-tighter">{language === 'vi' ? 'Hệ thống Quản lý Đối tác Nội bộ' : 'Internal Partner Management System'}</span>
          </div>
-         <p className="text-[9px] font-medium uppercase tracking-tighter">© 2024 Aethelgard Private Wealth. {language === 'vi' ? 'Tất cả quyền được bảo lưu.' : 'All rights reserved.'}</p>
+         <p className="text-[9px] font-medium uppercase tracking-tighter">© 2024 Elysium Ledger Private Wealth. {language === 'vi' ? 'Tất cả quyền được bảo lưu.' : 'All rights reserved.'}</p>
       </footer>
     </div>
   );
@@ -3307,7 +3307,7 @@ const ValuationView = ({ assetId, onBack }: { assetId: string, onBack: () => voi
                <div>
                   <p className="text-[9px] uppercase font-black text-gray-400 tracking-widest">{t('advisor')}</p>
                   <p className="text-xs font-black">Lê Minh Tuấn</p>
-                  <p className="text-[10px] text-gray-400 font-medium underline">tuan.le@aethelgard.com</p>
+                  <p className="text-[10px] text-gray-400 font-medium underline">tuan.le@elysiumledger.com</p>
                </div>
            </div>
         </div>
